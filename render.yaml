@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: todo-crud-api
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node --experimental-sqlite dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: ./todos.db
+      - key: CORS_ORIGIN
+        sync: false

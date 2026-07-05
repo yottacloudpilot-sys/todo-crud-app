@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Todos</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f3ff;
+      min-height: 100vh;
+      color: #1e1b4b;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      margin-top: 0.35rem;
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* ── Main container ── */
+    main {
+      max-width: 680px;
+      margin: 2rem auto;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ── Create form card ── */
+    .create-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(79, 70, 229, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    .create-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4f46e5;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-group { margin-bottom: 0.85rem; }
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #1e1b4b;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+      background: white;
+    }
+    input[type="text"].input-error, textarea.input-error {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    .validation-msg {
+      display: none;
+      font-size: 0.8rem;
+      color: #ef4444;
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+    .validation-msg.visible { display: block; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45); }
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-danger {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-icon {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      border-radius: 6px;
+    }
+
+    /* ── Banners ── */
+    #loading-banner {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      background: #ede9fe;
+      color: #4f46e5;
+      border: 1.5px solid #c4b5fd;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    #loading-banner.visible { display: flex; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid #c4b5fd;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error-banner {
+      display: none;
+      align-items: flex-start;
+      gap: 0.6rem;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    #error-banner.visible { display: flex; }
+    #error-banner .close-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #b91c1c;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* ── Todo list ── */
+    #todo-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+    }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 1rem; }
+
+    /* ── Todo card ── */
+    .todo-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      box-shadow: 0 2px 10px rgba(79, 70, 229, 0.08);
+      border: 1.5px solid #ede9fe;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .todo-card:hover {
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.14);
+      transform: translateY(-1px);
+    }
+    .todo-card.completed {
+      background: #f9f9f9;
+      border-color: #e5e7eb;
+      opacity: 0.85;
+    }
+
+    .card-view { display: flex; align-items: flex-start; gap: 0.75rem; }
+
+    .card-checkbox-wrap { padding-top: 2px; flex-shrink: 0; }
+    .card-checkbox {
+      width: 20px; height: 20px;
+      cursor: pointer;
+      accent-color: #4f46e5;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+    .todo-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e1b4b;
+      word-break: break-word;
+    }
+    .todo-card.completed .todo-title {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+    .todo-desc {
+      margin-top: 0.3rem;
+      font-size: 0.88rem;
+      color: #6b7280;
+      word-break: break-word;
+    }
+    .todo-card.completed .todo-desc { opacity: 0.5; }
+
+    .card-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 0.5rem;
+    }
+
+    /* ── Edit mode ── */
+    .card-edit { display: none; flex-direction: column; gap: 0.65rem; }
+    .card-edit.active { display: flex; }
+    .card-view.hidden { display: none; }
+
+    .edit-actions { display: flex; gap: 0.5rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 500px) {
+      header h1 { font-size: 1.5rem; }
+      .card-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>✅ My Todos</h1>
+  <p>Stay organised, one task at a time.</p>
+</header>
+
+<main>
+
+  <!-- Create form -->
+  <div class="create-card">
+    <h2>New Task</h2>
+    <form id="create-form" novalidate>
+      <div class="form-group">
+        <label for="create-title">Title <span style="color:#ef4444">*</span></label>
+        <input type="text" id="create-title" placeholder="What needs to be done?" maxlength="255" autocomplete="off" />
+        <span class="validation-msg" id="create-title-error">Title is required.</span>
+      </div>
+      <div class="form-group">
+        <label for="create-desc">Description</label>
+        <textarea id="create-desc" placeholder="Optional details…" maxlength="1000"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">＋ Add Todo</button>
+    </form>
+  </div>
+
+  <!-- Loading banner -->
+  <div id="loading-banner" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <span>Loading…</span>
+  </div>
+
+  <!-- Error banner -->
+  <div id="error-banner" role="alert" aria-live="assertive">
+    <span id="error-msg"></span>
+    <button class="close-btn" id="error-close" aria-label="Dismiss error">✕</button>
+  </div>
+
+  <!-- Todo list -->
+  <div id="todo-list" aria-label="Todo list"></div>
+
+</main>
+
+<script>
+  // ── CONFIG ────────────────────────────────────────────────────────────────
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://todo-crud-api.onrender.com'; // update with actual Render URL after deploy
+
+  // ── API CLIENT ────────────────────────────────────────────────────────────
+  const API = {
+    async _request(method, path, body) {
+      const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      const res = await fetch(`${API_BASE}${path}`, opts);
+      if (!res.ok) {
+        let message = res.statusText;
+        try {
+          const json = await res.json();
+          if (json && json.error) message = json.error;
+        } catch (_) { /* ignore */ }
+        const err = new Error(message);
+        err.status = res.status;
+        throw err;
+      }
+      return res.json();
+    },
+
+    fetchAll()        { return this._request('GET',    '/todos'); },
+    create(data)      { return this._request('POST',   '/todos', data); },
+    update(id, data)  { return this._request('PATCH',  `/todos/${id}`, data); },
+    del(id)           { return this._request('DELETE', `/todos/${id}`); },
+  };
+
+  // ── STATE ─────────────────────────────────────────────────────────────────
+  let todos = [];
+
+  // ── UI HELPERS ────────────────────────────────────────────────────────────
+  function showLoading(bool) {
+    document.getElementById('loading-banner').classList.toggle('visible', bool);
+  }
+
+  function showError(msg) {
+    document.getElementById('error-msg').textContent = msg;
+    document.getElementById('error-banner').classList.add('visible');
+  }
+
+  function clearError() {
+    document.getElementById('error-banner').classList.remove('visible');
+    document.getElementById('error-msg').textContent = '';
+  }
+
+  document.getElementById('error-close').addEventListener('click', clearError);
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  function renderList() {
+    const list = document.getElementById('todo-list');
+    list.innerHTML = '';
+
+    if (todos.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<div class="empty-icon">📋</div><p>No todos yet — add one above!</p>';
+      list.appendChild(empty);
+      return;
+    }
+
+    todos.forEach(item => list.appendChild(renderTodoCard(item)));
+  }
+
+  function renderTodoCard(item) {
+    const card = document.createElement('div');
+    card.className = 'todo-card' + (item.completed ? ' completed' : '');
+    card.dataset.id = item.id;
+
+    // ── View mode ───────────────────────────────────────────────────────────
+    const viewEl = document.createElement('div');
+    viewEl.className = 'card-view';
+
+    const checkWrap = document.createElement('div');
+    checkWrap.className = 'card-checkbox-wrap';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'card-checkbox';
+    checkbox.checked = item.completed;
+    checkbox.setAttribute('aria-label', `Mark "${item.title}" as ${item.completed ? 'incomplete' : 'complete'}`);
+    checkbox.addEventListener('change', () => handleToggle(item.id, checkbox.checked));
+    checkWrap.appendChild(checkbox);
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'card-body';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'todo-title';
+    titleEl.textContent = item.title;
+    bodyEl.appendChild(titleEl);
+    if (item.description) {
+      const descEl = document.createElement('div');
+      descEl.className = 'todo-desc';
+      descEl.textContent = item.description;
+      bodyEl.appendChild(descEl);
+    }
+
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'card-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary btn-icon';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.setAttribute('aria-label', `Edit "${item.title}"`);
+    editBtn.addEventListener('click', () => activateEditMode(card, item));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-icon';
+    delBtn.textContent = '🗑';
+    delBtn.setAttribute('aria-label', `Delete "${item.title}"`);
+    delBtn.addEventListener('click', () => handleDelete(item.id));
+
+    actionsEl.appendChild(editBtn);
+    actionsEl.appendChild(delBtn);
+
+    viewEl.appendChild(checkWrap);
+    viewEl.appendChild(bodyEl);
+    viewEl.appendChild(actionsEl);
+
+    // ── Edit mode ────────────────────────────────────────────────────────────
+    const editEl = document.createElement('div');
+    editEl.className = 'card-edit';
+
+    const editTitleGroup = document.createElement('div');
+    editTitleGroup.className = 'form-group';
+    const editTitleLabel = document.createElement('label');
+    editTitleLabel.textContent = 'Title *';
+    const editTitleInput = document.createElement('input');
+    editTitleInput.type = 'text';
+    editTitleInput.className = 'edit-title-input';
+    editTitleInput.value = item.title;
+    editTitleInput.maxLength = 255;
+    const editTitleError = document.createElement('span');
+    editTitleError.className = 'validation-msg';
+    editTitleError.textContent = 'Title is required.';
+    editTitleGroup.appendChild(editTitleLabel);
+    editTitleGroup.appendChild(editTitleInput);
+    editTitleGroup.appendChild(editTitleError);
+
+    const editDescGroup = document.createElement('div');
+    editDescGroup.className = 'form-group';
+    const editDescLabel = document.createElement('label');
+    editDescLabel.textContent = 'Description';
+    const editDescArea = document.createElement('textarea');
+    editDescArea.className = 'edit-desc-input';
+    editDescArea.value = item.description || '';
+    editDescArea.maxLength = 1000;
+    editDescGroup.appendChild(editDescLabel);
+    editDescGroup.appendChild(editDescArea);
+
+    const editActions = document.createElement('div');
+    editActions.className = 'edit-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-primary btn-icon';
+    saveBtn.textContent = '💾 Save';
+    saveBtn.addEventListener('click', () => handleSaveEdit(item.id, editTitleInput, editDescArea, editTitleError));
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary btn-icon';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => deactivateEditMode(card, viewEl, editEl));
+
+    editActions.appendChild(saveBtn);
+    editActions.appendChild(cancelBtn);
+
+    editEl.appendChild(editTitleGroup);
+    editEl.appendChild(editDescGroup);
+    editEl.appendChild(editActions);
+
+    card.appendChild(viewEl);
+    card.appendChild(editEl);
+
+    return card;
+  }
+
+  function activateEditMode(card, item) {
+    card.querySelector('.card-view').classList.add('hidden');
+    card.querySelector('.card-edit').classList.add('active');
+    card.querySelector('.edit-title-input').focus();
+  }
+
+  function deactivateEditMode(card) {
+    card.querySelector('.card-view').classList.remove('hidden');
+    card.querySelector('.card-edit').classList.remove('active');
+  }
+
+  // ── EVENT HANDLERS ────────────────────────────────────────────────────────
+  async function loadTodos() {
+    showLoading(true);
+    clearError();
+    try {
+      todos = await API.fetchAll();
+      renderList();
+    } catch (err) {
+      showError(`Error ${err.status || ''}: ${err.message}`);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  document.getElementById('create-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const titleInput = document.getElementById('create-title');
+    const descInput  = document.getElementById('create-desc');
+    const titleError = document.getElementById('create-title-error');
+
+    const title = titleInput.value.trim();
+    if (!title) {
+      titleInput.classList.add('input-error');
+      titleError.classList.add('visible');
+      titleInput.focus();
+      return;
+    }
+    titleInput.classList.remove('input-error');
+    titleError.classList.remove('visible');
+
+    const description = descInput.value.trim() || null;
+
+    showLoading(true);
+    clearError();
+    try {
+      const created = await API.create({ title, description });
+      todos.unshift(created);
+      renderList();
+      titleInput.value = '';
+      descInput.value = '';
+    } catch (err) {
+      showError(`Error ${err.status || ''}: ${err.message}`);
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // Clear validation state when user starts typing
+  document.getElementById('create-title').addEventListener('input', function () {
+    this.classList.remove('input-error');
+    document.getElementById('create-title-error').classList.remove('visible');
+  });
+
+  async function handleToggle(id, completed) {
+    showLoading(true);
+    clearError();
+    try {
+      const updated = await API.update(id, { completed });
+      const idx = todos.findIndex(t => t.id === id);
+      if (idx !== -1) todos[idx] = updated;
+      renderList();
+    } catch (err) {
+      showError(`Error ${err.status || ''}: ${err.message}`);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  async function handleSaveEdit(id, titleInput, descArea, titleError) {
+    const title = titleInput.value.trim();
+    if (!title) {
+      titleInput.classList.add('input-error');
+      titleError.classList.add('visible');
+      titleInput.focus();
+      return;
+    }
+    titleInput.classList.remove('input-error');
+    titleError.classList.remove('visible');
+
+    const description = descArea.value.trim() || null;
+
+    showLoading(true);
+    clearError();
+    try {
+      const updated = await API.update(id, { title, description });
+      const idx = todos.findIndex(t => t.id === id);
+      if (idx !== -1) todos[idx] = updated;
+      renderList();
+    } catch (err) {
+      showError(`Error ${err.status || ''}: ${err.message}`);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    showLoading(true);
+    clearError();
+    try {
+      await API.del(id);
+      todos = todos.filter(t => t.id !== id);
+      renderList();
+    } catch (err) {
+      showError(`Error ${err.status || ''}: ${err.message}`);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  loadTodos();
+</script>
+</body>
+</html>
