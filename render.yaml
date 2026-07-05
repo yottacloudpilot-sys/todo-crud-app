@@ -1,7 +1,7 @@
 services:
   - type: web
     name: todo-crud-api
-    env: node
+    runtime: node
     buildCommand: npm install && npm run build
     startCommand: node --experimental-sqlite dist/server.js
     envVars:
