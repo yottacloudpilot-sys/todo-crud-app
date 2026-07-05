@@ -6,9 +6,10 @@ import { errorHandler } from './middleware/errorHandler';
 export function createApp(): Application {
   const app = express();
 
-  // CORS — configurable origins from environment
+  // CORS — strip trailing slash to avoid browser origin mismatch
+  const corsOrigin = (process.env.CORS_ORIGIN || '*').replace(/\/$/, '');
   app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigin,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type'],
   }));

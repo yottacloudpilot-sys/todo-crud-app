@@ -10,9 +10,10 @@ const todos_1 = __importDefault(require("./routes/todos"));
 const errorHandler_1 = require("./middleware/errorHandler");
 function createApp() {
     const app = (0, express_1.default)();
-    // CORS — configurable origins from environment
+    // CORS — strip trailing slash to avoid browser origin mismatch
+    const corsOrigin = (process.env.CORS_ORIGIN || '*').replace(/\/$/, '');
     app.use((0, cors_1.default)({
-        origin: process.env.CORS_ORIGIN || '*',
+        origin: corsOrigin,
         methods: ['GET', 'POST', 'PATCH', 'DELETE'],
         allowedHeaders: ['Content-Type'],
     }));
